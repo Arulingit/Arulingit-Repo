@@ -1,0 +1,10 @@
+{
+    "id": "customer_1",  // Unique identifier for the customer
+    "customer_name": "John Doe",  // Full name of the customer
+    "company_name": "Doe Steel Co.",  // Company associated with the customer
+    "contact_number": "123-456-7890",  // Phone number of the customer
+    "email": "john.doe@example.com",  // Email address of the customer
+    "address": "123 Main St, City, State, Zip",  // Physical address of the customer
+    "created_at": "2024-05-02T00:00:00Z",  // Date and time when the record was created
+    "updated_at": "2024-05-02T00:00:00Z"  // Date and time when the record was last updated
+}
