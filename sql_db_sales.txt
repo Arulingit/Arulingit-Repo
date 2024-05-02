@@ -1,0 +1,65 @@
+CREATE TABLE sales_db.customers (
+    customer_id INT PRIMARY KEY, -- Primary key
+    customer_name VARCHAR(100) NOT NULL, -- Full name of the customer
+    company_name VARCHAR(100), -- Company associated with the customer
+    contact_number VARCHAR(15), -- Phone number of the customer
+    email VARCHAR(100), -- Email address of the customer
+    address VARCHAR(255), -- Physical address of the customer
+    created_at DATETIME DEFAULT GETDATE(), -- Date and time when the record was created
+    updated_at DATETIME DEFAULT GETDATE() -- Date and time when the record was last updated
+);
+
+
+CREATE TABLE sales_db.products (
+    product_id INT PRIMARY KEY, -- Primary key
+    product_name VARCHAR(100) NOT NULL, -- Name of the product
+    product_type VARCHAR(50), -- Type or category of the product
+    unit_price DECIMAL(10, 2) NOT NULL, -- Price per unit of the product
+    stock_quantity INT NOT NULL -- Current quantity in stock
+);
+
+
+
+CREATE TABLE sales_db.sales_orders (
+    order_id INT PRIMARY KEY, -- Primary key
+    customer_id INT, -- Foreign key linking to customers table
+    order_date DATE NOT NULL, -- Date when the order was placed
+    total_amount DECIMAL(10, 2) NOT NULL, -- Total amount of the order
+    status ENUM('pending', 'completed', 'shipped') DEFAULT 'pending', -- Order status
+    created_at DATETIME DEFAULT GETDATE(), -- Date and time when the record was created
+    updated_at DATETIME DEFAULT GETDATE(), -- Date and time when the record was last updated
+    FOREIGN KEY (customer_id) REFERENCES sales_db.customers(customer_id)
+);
+
+
+
+CREATE TABLE sales_db.order_items (
+    item_id INT PRIMARY KEY, -- Primary key
+    order_id INT, -- Foreign key linking to sales_orders table
+    product_id INT, -- Foreign key linking to products table
+    quantity INT NOT NULL, -- Quantity of the product ordered
+    unit_price DECIMAL(10, 2) NOT NULL, -- Price per unit of the product
+    total_price DECIMAL(10, 2) NOT NULL, -- Total price of the order item (quantity * unit_price)
+    FOREIGN KEY (order_id) REFERENCES sales_db.sales_orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES sales_db.products(product_id)
+);
+
+
+CREATE TABLE sales_db.sales_representatives (
+    sales_rep_id INT PRIMARY KEY, -- Primary key
+    name VARCHAR(100) NOT NULL, -- Full name of the sales representative
+    email VARCHAR(100), -- Email address of the sales representative
+    contact_number VARCHAR(15), -- Phone number of the sales representative
+    territory VARCHAR(50) -- Sales territory assigned to the sales representative
+);
+
+
+CREATE TABLE sales_db.sales_performance (
+    sales_rep_id INT, -- Foreign key linking to sales_representatives table
+    order_id INT, -- Foreign key linking to sales_orders table
+    revenue DECIMAL(10, 2), -- Revenue generated from the sales order
+    commission DECIMAL(10, 2), -- Commission earned by the sales representative
+    created_at DATETIME DEFAULT GETDATE(), -- Date and time when the record was created
+    FOREIGN KEY (sales_rep_id) REFERENCES sales_db.sales_representatives(sales_rep_id),
+    FOREIGN KEY (order_id) REFERENCES sales_db.sales_orders(order_id)
+);
