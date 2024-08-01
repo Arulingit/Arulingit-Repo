@@ -1,0 +1,53 @@
+use role accountadmin;
+use database ECOMMERCE_DB;
+create or replace storage integration aws_snf_data
+type=external_stage
+storage_provider=s3
+enabled=true
+storage_aws_role_arn='arn:aws:iam::876809972236:role/Snowflake_aws_role'
+storage_allowed_locations=('s3://snowflakeabc000/');
+
+
+desc integration aws_snf_data;
+
+
+use role accountadmin;
+
+use database ECOMMERCE_DB;
+
+create schema demo_dev;
+
+create or replace table lineitemnew cluster by (L_SHIPDATE) as select * from ECOMMERCE_DB.ECOMMERCE_LIV.LINEITEM limit 1;
+
+truncate table lineitemnew;
+
+create file format csv_load_format
+type='CSV'
+compression='AUTO'
+field_delimiter=','
+record_delimiter='\n'
+skip_header=1
+field_optionally_enclosed_by='\042'
+trim_space=FALSE
+error_on_column_count_mismatch=TRUE
+escape='NONE'
+escape_unenclosed_field='\134'
+date_format='AUTO'
+timestamp_format='AUTO';
+
+
+create stage stag_linteitem_csv_dev
+storage_integration=aws_snf_data
+url='s3://snowflakeabc000/dev/lineitem/csv/'
+file_format=csv_load_format;
+
+
+list @stag_linteitem_csv_dev;
+
+
+copy into lineitemnew
+from @stag_linteitem_csv_dev
+ON_ERROR=ABORT_STATEMENT;
+
+
+select * from lineitemnew;
