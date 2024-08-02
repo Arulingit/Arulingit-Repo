@@ -1,0 +1,69 @@
+use role accountadmin
+
+-- create a table that will store data loaded by pipe
+
+create or replace TABLE ECOMMERCE_DB.DEMO_DEV.LINEITEMNEW (
+	L_RETURNFLAG VARCHAR(20),
+	L_LINESTATUS VARCHAR(20),
+	L_SHIPINSTRUCT VARCHAR(25),
+	L_SHIPMODE VARCHAR(10),
+	L_COMMENT VARCHAR(44)
+);
+
+-- aws_snf_data   integrated storage AWS s3 
+
+create or replace storage integration aws_snf_data
+type=external_stage
+storage_provider=s3
+enabled=true
+storage_aws_role_arn='arn:aws:iam::876809972236:role/Snowflake_aws_role'
+storage_allowed_locations=('s3://snowflakeabc000/');
+
+desc integration aws_snf_data
+
+
+-- create a stage stag_linteitem_csv_dev  into storage 
+
+
+create or replace stage stag_linteitem_csv_dev
+storage_integration=aws_snf_data
+url='s3://snowflakeabc000/dev/lineitem/csv/'
+file_format=csv_load_format;
+
+
+-- Test a manual copy works 
+copy into lineitemnew
+from @stag_linteitem_csv_dev
+ON_ERROR=ABORT_STATEMENT;
+
+
+                                        CREATE OR REPLACE PIPE newpipe2024 AUTO_INGEST=TRUE 
+                                        AS
+or                                         COPY INTO lineitemnew
+                                        FROM @stag_linteitem_csv_dev
+                                        FILE_FORMAT = (TYPE = 'CSV' FIELD_OPTIONALLY_ENCLOSED_BY = '"');
+
+
+
+show stages 
+
+list @stag_linteitem_csv_dev
+
+-- create snow pipe to s3 
+
+create or replace pipe newpipe2024 auto_ingest=true as copy into lineitemnew from @stag_linteitem_csv_dev ON_ERROR=continue;
+
+
+-- Go to AWS s3 and setup event triggers the SQS in AWs 
+
+
+show pipes
+ALTER PIPE newpipe2024 SET PIPE_EXECUTION_PAUSED = TRUE;
+ALTER PIPE newpipe2024 SET PIPE_EXECUTION_PAUSED = FALSE;
+
+
+-- check the data loaded by every csv load into s3
+
+truncate table lineitemnew;
+select * from lineitemnew
+
