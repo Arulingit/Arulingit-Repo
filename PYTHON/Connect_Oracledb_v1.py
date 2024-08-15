@@ -1,5 +1,6 @@
 #learning the connect to oracle database-commtin second 
 #fetch test
+#learning
 import oracledb
 import getpass
 connection = oracledb.connect(user="hr", password=userpwd,dsn="localhost/orclpdb")
