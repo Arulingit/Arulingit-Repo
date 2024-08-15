@@ -6,3 +6,4 @@ print("1d-\n",array1)
 print("2d-\n",array2)
 
 print("2d-\n",array3)
+  
