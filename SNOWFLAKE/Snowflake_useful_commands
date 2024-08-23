@@ -1,0 +1,27 @@
+use role accountadmin
+show warehouses
+show stages
+show views 
+show schemas
+show databases
+show tables
+show session
+
+
+select current_warehouse()
+select current_database()
+select current_schema()
+SELECT CURRENT_ACCOUNT();
+
+
+select * from snowflake.account_usage.login_history
+select * from information_schema.tables where table_type='TABLES';
+SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())); -- tables details
+
+SELECT * FROM INFORMATION_SCHEMA.PIPES WHERE PIPE_NAME = 'newpipe2024';
+
+select * from information_schema.load_history where table_name='LINEITEMNEW' order by last_load_time limit 3;
+
+describe table lineitemnew
+desc integration aws_snf_data
+
