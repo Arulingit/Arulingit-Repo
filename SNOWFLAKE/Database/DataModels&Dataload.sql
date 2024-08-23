@@ -150,10 +150,19 @@ SELECT DISTINCT
 FROM NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE
 WHERE RevenueDate IS NOT NULL;
 
+CREATE TASK Load_DimCustomer
+WAREHOUSE = COMPUTE_WH
+AFTER Load_DimDate
+AS
+INSERT INTO DimCustomer
+SELECT DISTINCT CustomerID, CustomerName, CustomerSegment
+FROM NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TransformedCustomerInsights;
 
+
+---FACT tables loaded by TASK 
 
 CREATE TASK Load_FactCustomerInsights
-WAREHOUSE = my_warehouse
+WAREHOUSE = COMPUTE_WH
 AFTER Load_DimCustomer
 AS
 INSERT INTO FactCustomerInsights
@@ -166,7 +175,7 @@ FROM TransformedCustomerInsights tci
 JOIN DimDate dd ON tci.LastPurchaseDate = dd.DateKey;
 
 CREATE TASK Load_FactRevenue
-WAREHOUSE = my_warehouse
+WAREHOUSE = COMPUTE_WH
 AFTER Load_DimDate
 AS
 INSERT INTO FactRevenue
@@ -177,31 +186,3 @@ SELECT
     tr.ProfitMargin
 FROM TransformedRevenue tr
 JOIN DimDate dd ON tr.RevenueDate = dd.DateKey;
-
-
-CREATE TASK Load_FactCustomerInsights
-WAREHOUSE = my_warehouse
-AFTER Load_DimCustomer
-AS
-INSERT INTO FactCustomerInsights
-SELECT 
-    tci.CustomerID, 
-    dd.DateKey,
-    tci.SatisfactionScore,
-    tci.TotalPurchases
-FROM TransformedCustomerInsights tci
-JOIN DimDate dd ON tci.LastPurchaseDate = dd.DateKey;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
