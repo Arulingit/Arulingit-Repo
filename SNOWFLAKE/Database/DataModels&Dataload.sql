@@ -145,7 +145,8 @@ select count(*) from NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE lim
 
 CREATE OR REPLACE TASK Load_DimDate
 WAREHOUSE = COMPUTE_WH
-SCHEDULE = 'USING CRON */2 * * * * UTC'
+SCHEDULE = 'USING CRON 0 */3 * * * UTC'
+--SCHEDULE = 'USING CRON /10 * * * * UTC'
 AS
 INSERT INTO DimDate (DateKey, Year, Quarter, Month, Day)
 SELECT DISTINCT 
@@ -156,6 +157,19 @@ SELECT DISTINCT
     DAY(RevenueDate) AS Day
 FROM NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE
 WHERE RevenueDate IS NOT NULL limit 10;
+
+CREATE OR REPLACE TASK Load_DimCustomer
+WAREHOUSE = COMPUTE_WH
+AFTER Load_DimDate
+AS
+INSERT INTO DimCustomer (CustomerID, CustomerName, CustomerSegment)
+SELECT DISTINCT 
+    CustomerID, 
+    -- Assuming CustomerName and CustomerSegment are columns in the source table
+    'Unknown' AS CustomerName,  -- Placeholder or default value
+    'Unknown' AS CustomerSegment  -- Placeholder or default value
+FROM NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TransformedCustomerInsights;
+
 
 CREATE OR REPLACE TASK Load_DimCustomer
 WAREHOUSE = COMPUTE_WH
