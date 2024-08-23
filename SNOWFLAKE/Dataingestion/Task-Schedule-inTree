@@ -1,0 +1,83 @@
+use role accountadmin
+
+drop role task_owner; 
+create role task_owner;
+
+select current_warehouse() 
+
+grant usage on warehouse COMPUTE_WH to role task_owner ;
+grant usage on database ECOMMERCE_DB  to role task_owner ;
+grant usage on schema  ECOMMERCE_DB.ECOMMERCE_LIV   to role task_owner ;
+grant select on ECOMMERCE_DB.ECOMMERCE_LIV.LINEITEM  to role task_owner ;
+grant select on ECOMMERCE_DB.ECOMMERCE_LIV.ORDERS  to role task_owner ;
+grant create task on schema ECOMMERCE_DB.ECOMMERCE_LIV to role task_owner;
+grant execute task  on account to role task_owner;
+grant ownership on all tasks in schema ECOMMERCE_DB.ECOMMERCE_LIV to role task_owner ;
+grant create table on schema ECOMMERCE_DB.ECOMMERCE_LIV to role task_owner ;
+
+
+
+
+grant role task_owner to user arulinsnf;
+use schema ECOMMERCE_DB.ECOMMERCE_LIV
+use role task_owner
+
+use warehouse COMPUTE_WH
+
+show tasks
+alter task TSK_DAILY_SALES_SUMMARY resume ;
+alter task TSK_ORDER_BY_SHIPMODE resume ;
+CREATE OR REPLACE TASK tsk_daily_sales_summary
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = 'USING CRON */1 * * * * UTC'
+AS 
+INSERT INTO ECOMMERCE_LIV.DAILY_AGGREGATED_SUMMARY
+SELECT
+  SUM(L_QUANTITY) AS sum_qty,
+  SUM(L_EXTENDEDPRICE) AS total_base_price,
+  SUM(L_EXTENDEDPRICE * (1-L_DISCOUNT)) AS total_discount_price,
+  SUM(L_EXTENDEDPRICE * (1-L_DISCOUNT) * (1+L_TAX)) AS total_charge,
+  COUNT(*) AS order_count,
+  DATE(L_SHIPDATE) AS shipped_date,
+  L_SHIPMODE AS shipped_mode 
+FROM ECOMMERCE_LIV.LINEITEM
+WHERE DATE(L_SHIPDATE) = '1994-03-31'
+GROUP BY shipped_date, shipped_mode
+LIMIT 10;
+
+
+ALTER TASK tsk_daily_sales_summary RESUME;
+
+
+
+
+CREATE OR REPLACE TASK tsk_order_by_shipmode 
+  WAREHOUSE = COMPUTE_WH
+  AFTER tsk_daily_sales_summary
+AS
+INSERT INTO ECOMMERCE_DB.ECOMMERCE_LIV.ORDER_BY_SHIPMODE
+SELECT
+  ROUND(SUM(order_count)) AS total_orders,
+  ROUND(SUM(total_discount_price_number),0) AS total_discount,
+  shipped_date,
+  shipped_mode
+FROM ECOMMERCE_DB.ECOMMERCE_LIV.DAILY_AGGREGATED_SUMMARY
+GROUP BY shipped_date, shipped_mode;
+
+
+select * from DAILY_AGGREGATED_SUMMARY
+
+select * from order_by_shipmode
+SHOW TASKS;
+ALTER TASK tsk_daily_sales_summary RESUME;
+ALTER TASK tsk_order_by_shipmode RESUME;
+ALTER TASK tsk_daily_sales_summary suspend;
+ALTER TASK tsk_order_by_shipmode suspend;
+truncate table DAILY_AGGREGATED_SUMMARY;
+truncate table order_by_shipmode;
+select sysdate()
+
+
+
+
+
