@@ -34,6 +34,36 @@ file_format=csv_load_format;
 
 list @stage_csv_file
 
+CREATE TABLE Load_structure_table (
+    plugin_name VARCHAR,
+    family VARCHAR,
+    severity VARCHAR,
+    ip_address VARCHAR,
+    protocol VARCHAR,
+    port INT,
+    exploit BOOLEAN,
+    repository VARCHAR,
+    mac_address VARCHAR,
+    dns_name VARCHAR,
+    netbios_name VARCHAR,
+    plugin_output TEXT,
+    synopsis TEXT,
+    description TEXT,
+    solution TEXT,
+    see_also TEXT,
+    risk_factor INT,
+    stig_severity VARCHAR,
+    vulnerability_priority_rating INT,
+    cpe VARCHAR,
+    cve VARCHAR,
+    bid INT,
+    cross_references TEXT,
+    first_discovered TIMESTAMP_NTZ,
+    last_observed TIMESTAMP_NTZ,
+    vuln_publication_date TIMESTAMP_NTZ,
+    patch_publication_date TIMESTAMP_NTZ,
+    cvss_v3_base_score FLOAT
+);
 
 copy into Load_structure_table from @stage_csv_file
 ON_ERROR=ABORT_STATEMENT;
@@ -43,5 +73,11 @@ ON_ERROR=ABORT_STATEMENT;
 
  truncate table Load_structure_table;
 
+CREATE OR REPLACE PIPE SNOWPIPELINE_2_AWS_S3 AUTO_INGEST=TRUE 
+ AS
+ COPY INTO Load_structure_table   FROM @stage_csv_file FILE_FORMAT = (TYPE = 'csv_load_format') ON_ERROR=continue;;
+                                        
 
-
+show pipes
+ALTER PIPE newpipe2024 SET PIPE_EXECUTION_PAUSED = TRUE;
+ALTER PIPE newpipe2024 SET PIPE_EXECUTION_PAUSED = FALSE;
