@@ -1,0 +1,65 @@
+{
+    "fruit": {
+        "name": "Apple",
+        "details": {
+            "size": "Large",
+            "color": "Red",
+            "varieties": [
+                {
+                    "variety": "Fuji",
+                    "origin": "Japan",
+                    "season": "Fall",
+                    "price_per_kg": 3.5
+                },
+                {
+                    "variety": "Granny Smith",
+                    "origin": "Australia",
+                    "season": "Spring",
+                    "price_per_kg": 4.0
+                }
+            ]
+        },
+        "nutrition": {
+            "calories_per_100g": 52,
+            "carbohydrates_per_100g": 14,
+            "fiber_per_100g": 2.4
+        },
+        "availability": {
+            "in_stock": true,
+            "quantity": {
+                "unit": "kg",
+                "amount": 100
+            }
+        }
+    },
+    "supplier": {
+        "name": "FreshFruits Inc.",
+        "contact": {
+            "phone": "+1-800-123-4567",
+            "email": "info@freshfruits.com"
+        },
+        "address": {
+            "street": "123 Orchard Lane",
+            "city": "Fruitville",
+            "state": "CA",
+            "zip": "90210"
+        }
+    },
+    "related_products": [
+        {
+            "product": "Banana",
+            "category": "Fruit",
+            "price_per_kg": 1.2
+        },
+        {
+            "product": "Orange",
+            "category": "Fruit",
+            "price_per_kg": 2.0
+        }
+    ],
+    "metadata": {
+        "timestamp": "2024-08-23T10:00:00Z",
+        "source": "inventory_system",
+        "version": "1.0"
+    }
+}
