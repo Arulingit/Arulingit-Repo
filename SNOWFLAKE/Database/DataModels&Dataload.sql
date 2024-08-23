@@ -53,72 +53,6 @@ CREATE TABLE FactCustomerInsights (
 
 
 
-
-
-CREATE TASK Load_DimDate
-WAREHOUSE = my_warehouse
-SCHEDULE = 'USING CRON 0 * * * * UTC'
-AS
-INSERT INTO DimDate
-SELECT DISTINCT DateKey, Year(DateKey), Quarter(DateKey), Month(DateKey), Day(DateKey)
-FROM TransformedRevenue;
-
-
-CREATE TASK Load_FactCustomerInsights
-WAREHOUSE = my_warehouse
-AFTER Load_DimCustomer
-AS
-INSERT INTO FactCustomerInsights
-SELECT 
-    tci.CustomerID, 
-    dd.DateKey,
-    tci.SatisfactionScore,
-    tci.TotalPurchases
-FROM TransformedCustomerInsights tci
-JOIN DimDate dd ON tci.LastPurchaseDate = dd.DateKey;
-
-CREATE TASK Load_FactRevenue
-WAREHOUSE = my_warehouse
-AFTER Load_DimDate
-AS
-INSERT INTO FactRevenue
-SELECT 
-    tr.RevenueDate, 
-    tr.TotalRevenue, 
-    tr.CostOfGoodsSold, 
-    tr.ProfitMargin
-FROM TransformedRevenue tr
-JOIN DimDate dd ON tr.RevenueDate = dd.DateKey;
-
-
-CREATE TASK Load_FactCustomerInsights
-WAREHOUSE = my_warehouse
-AFTER Load_DimCustomer
-AS
-INSERT INTO FactCustomerInsights
-SELECT 
-    tci.CustomerID, 
-    dd.DateKey,
-    tci.SatisfactionScore,
-    tci.TotalPurchases
-FROM TransformedCustomerInsights tci
-JOIN DimDate dd ON tci.LastPurchaseDate = dd.DateKey;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ALTER TABLE NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE
 ALTER COLUMN ProfitMargin SET DATA TYPE NUMBER(6,2);
 
@@ -197,5 +131,77 @@ truncate table  NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE
 
 -- Call the procedure to load data
 CALL load_transformed_data_CUSTOMERs();
+
+
+
+
+
+CREATE OR REPLACE TASK Load_DimDate
+WAREHOUSE = COMPUTE_WH
+SCHEDULE = 'USING CRON */10 * * * * UTC'
+AS
+INSERT INTO DimDate (DateKey, Year, Quarter, Month, Day)
+SELECT DISTINCT 
+    RevenueDate AS DateKey, 
+    YEAR(RevenueDate) AS Year, 
+    QUARTER(RevenueDate) AS Quarter, 
+    MONTH(RevenueDate) AS Month, 
+    DAY(RevenueDate) AS Day
+FROM NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE
+WHERE RevenueDate IS NOT NULL;
+
+
+
+CREATE TASK Load_FactCustomerInsights
+WAREHOUSE = my_warehouse
+AFTER Load_DimCustomer
+AS
+INSERT INTO FactCustomerInsights
+SELECT 
+    tci.CustomerID, 
+    dd.DateKey,
+    tci.SatisfactionScore,
+    tci.TotalPurchases
+FROM TransformedCustomerInsights tci
+JOIN DimDate dd ON tci.LastPurchaseDate = dd.DateKey;
+
+CREATE TASK Load_FactRevenue
+WAREHOUSE = my_warehouse
+AFTER Load_DimDate
+AS
+INSERT INTO FactRevenue
+SELECT 
+    tr.RevenueDate, 
+    tr.TotalRevenue, 
+    tr.CostOfGoodsSold, 
+    tr.ProfitMargin
+FROM TransformedRevenue tr
+JOIN DimDate dd ON tr.RevenueDate = dd.DateKey;
+
+
+CREATE TASK Load_FactCustomerInsights
+WAREHOUSE = my_warehouse
+AFTER Load_DimCustomer
+AS
+INSERT INTO FactCustomerInsights
+SELECT 
+    tci.CustomerID, 
+    dd.DateKey,
+    tci.SatisfactionScore,
+    tci.TotalPurchases
+FROM TransformedCustomerInsights tci
+JOIN DimDate dd ON tci.LastPurchaseDate = dd.DateKey;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
