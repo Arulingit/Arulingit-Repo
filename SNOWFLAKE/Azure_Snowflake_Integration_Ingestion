@@ -1,0 +1,124 @@
+
+--Required AWS role ARN from AWS  
+--Required AWS S3 URL from AWS 
+use role accountadmin; -- Role
+use database WYN; --Database name
+use schema Manager; --Owner
+
+---Integrate the Azure blob storage containers to snowflake storage , in snowflake 
+
+CREATE or replace STORAGE INTEGRATION azure_snf_data
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = 'AZURE'
+  ENABLED = TRUE
+  AZURE_TENANT_ID = 'd470dbe***********' 
+  STORAGE_ALLOWED_LOCATIONS = ('Azure://collectfilesfordata.blob.core.windows.net/json','Azure://collectfilesfordata.blob.core.windows.net/csv','Azure://collectfilesfordata.blob.core.windows.net/xls');
+
+-- Handle the required the snowflake parameters in azure  
+desc integration azure_snf_data
+      --AZURE_CONSENT_URL value is required (get the consent using URL in webbrowser)
+      --AZURE_MULTI_TENANT_APP_NAME is APP name ( create service principle role and assign privileges to APP NAME in azure) 
+
+---Create file read formatter required in Snowflake
+
+create or replace file format JSON_Read_format
+type='JSON'
+compression='AUTO';  
+
+--Staged the files in azure container to Snowflake stage
+
+create or replace stage Azure_Snowflake_Json
+storage_integration=azure_snf_data
+url='Azure://collectfilesfordata.blob.core.windows.net/json'
+file_format=JSON_Read_format;
+
+-- Verify the staged files
+list @Azure_Snowflake_Json
+
+-- create and Load the Json file data into Json source variant and 
+create or replace table json_Source_variant_01 (src variant); 
+truncate table json_Source_variant_01;
+copy into json_Source_variant_01 from @Azure_Snowflake_Json ON_ERROR=ABORT_STATEMENT;
+
+----Create strucure table fruit_table and Load data from Json source variant
+drop table fruit_table;
+CREATE OR REPLACE TABLE fruit_table (
+    fruit_name STRING,
+    fruit_size STRING,
+    fruit_color STRING,
+    variety1_name STRING,
+    variety1_origin STRING,
+    variety1_season STRING,
+    variety1_price_per_kg NUMBER,
+    variety2_name STRING,
+    variety2_origin STRING,
+    variety2_season STRING,
+    variety2_price_per_kg NUMBER,
+    calories_per_100g NUMBER,
+    carbohydrates_per_100g NUMBER,
+    fiber_per_100g NUMBER,
+    in_stock BOOLEAN,
+    quantity_unit STRING,
+    quantity_amount NUMBER,
+    supplier_name STRING,
+    supplier_phone STRING,
+    supplier_email STRING,
+    supplier_street STRING,
+    supplier_city STRING,
+    supplier_state STRING,
+    supplier_zip STRING,
+    related_product1 STRING,
+    related_product1_category STRING,
+    related_product1_price_per_kg NUMBER,
+    related_product2 STRING,
+    related_product2_category STRING,
+    related_product2_price_per_kg NUMBER,
+    metadata_timestamp TIMESTAMP,
+    metadata_source STRING,
+    metadata_version STRING
+);
+
+
+insert into fruit_table select
+    src:fruit:name::STRING AS fruit_name,
+    src:fruit:details:size::STRING AS fruit_size,
+    src:fruit:details:color::STRING AS fruit_color,
+    src:fruit:details:varieties[0]:variety::STRING AS variety1_name,
+    src:fruit:details:varieties[0]:origin::STRING AS variety1_origin,
+    src:fruit:details:varieties[0]:season::STRING AS variety1_season,
+    src:fruit:details:varieties[0]:price_per_kg::NUMBER AS variety1_price_per_kg,
+    src:fruit:details:varieties[1]:variety::STRING AS variety2_name,
+    src:fruit:details:varieties[1]:origin::STRING AS variety2_origin,
+    src:fruit:details:varieties[1]:season::STRING AS variety2_season,
+    src:fruit:details:varieties[1]:price_per_kg::NUMBER AS variety2_price_per_kg,
+    src:fruit:nutrition:calories_per_100g::NUMBER AS calories_per_100g,
+    src:fruit:nutrition:carbohydrates_per_100g::NUMBER AS carbohydrates_per_100g,
+    src:fruit:nutrition:fiber_per_100g::NUMBER AS fiber_per_100g,
+    src:fruit:availability:in_stock::BOOLEAN AS in_stock,
+    src:fruit:availability:quantity:unit::STRING AS quantity_unit,
+    src:fruit:availability:quantity:amount::NUMBER AS quantity_amount,
+    src:supplier:name::STRING AS supplier_name,
+    src:supplier:contact:phone::STRING AS supplier_phone,
+    src:supplier:contact:email::STRING AS supplier_email,
+    src:supplier:address:street::STRING AS supplier_street,
+    src:supplier:address:city::STRING AS supplier_city,
+    src:supplier:address:state::STRING AS supplier_state,
+    src:supplier:address:zip::STRING AS supplier_zip,
+    src:related_products[0]:product::STRING AS related_product1,
+    src:related_products[0]:category::STRING AS related_product1_category,
+    src:related_products[0]:price_per_kg::NUMBER AS related_product1_price_per_kg,
+    src:related_products[1]:product::STRING AS related_product2,
+    src:related_products[1]:category::STRING AS related_product2_category,
+    src:related_products[1]:price_per_kg::NUMBER AS related_product2_price_per_kg,
+    src:metadata:timestamp::TIMESTAMP AS metadata_timestamp,
+    src:metadata:source::STRING AS metadata_source,
+    src:metadata:version::STRING AS metadata_version
+ FROM json_Source_variant_01;
+
+
+
+ select  * from json_Source_variant_01;
+
+ truncate table json_Source_variant_01;
+
+
