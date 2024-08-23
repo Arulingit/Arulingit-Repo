@@ -122,3 +122,10 @@ insert into fruit_table select
  truncate table json_Source_variant_01;
 
 
+CREATE OR REPLACE PIPE SNOWPIPELINE_2_AZURE_BLOB AUTO_INGEST=TRUE 
+ AS
+ COPY INTO json_Source_variant_01 from @Azure_Snowflake_Json FILE_FORMAT = (TYPE = 'JSON') ON_ERROR=continue;;
+                                        
+show pipes
+ALTER PIPE SNOWPIPELINE_2_AZURE_BLOB SET PIPE_EXECUTION_PAUSED = TRUE;
+ALTER PIPE SNOWPIPELINE_2_AZURE_BLOB SET PIPE_EXECUTION_PAUSED = FALSE;
