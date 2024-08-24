@@ -24,6 +24,7 @@ CREATE OR REPLACE TABLE RawRevenueData_csv (
     ProfitMargin DECIMAL(10,2)
 );
 
+
 CREATE OR REPLACE TABLE RawCustomerData_json (
     CustomerID STRING,
     SatisfactionScore INT,
