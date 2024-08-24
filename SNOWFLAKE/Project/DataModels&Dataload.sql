@@ -4,7 +4,7 @@ CREATE TABLE TransformedRevenue (
     RevenueDate DATE,
     TotalRevenue DECIMAL(15,2),
     CostOfGoodsSold DECIMAL(15,2),
-    ProfitMargin DECIMAL(5,2)
+    ProfitMargin DECIMAL(7,2)
 );
 
 
@@ -51,3 +51,5 @@ CREATE TABLE FactCustomerInsights (
 );
 
 
+ALTER TABLE NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE
+ALTER COLUMN ProfitMargin SET DATA TYPE NUMBER(6,2);
