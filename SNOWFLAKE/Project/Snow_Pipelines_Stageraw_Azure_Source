@@ -1,0 +1,25 @@
+CREATE or replace STORAGE INTEGRATION azure_snf_data
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = 'AZURE'
+  ENABLED = TRUE
+  AZURE_TENANT_ID = 'd470dbee-ee13-4b4b-814d-b5b8c86c428c' 
+  STORAGE_ALLOWED_LOCATIONS = ('Azure://collectfilesfordata.blob.core.windows.net/json');
+
+desc integration azure_snf_data
+
+create or replace file format JSON_Read_format
+type='JSON'
+compression='AUTO';  
+
+create or replace stage Azure_Snowflake_Json
+storage_integration=azure_snf_data
+url='Azure://collectfilesfordata.blob.core.windows.net/json'
+file_format=JSON_Read_format;
+
+list @Azure_Snowflake_Json
+copy into RawCustomerData_Json from @Azure_Snowflake_Json ON_ERROR=ABORT_STATEMENT;
+
+ // COPY INTO RawCustomerData_Json
+FROM @Azure_Snowflake_Json
+FILE_FORMAT = (TYPE = 'JSON')
+ON_ERROR = 'ABORT_STATEMENT';//
