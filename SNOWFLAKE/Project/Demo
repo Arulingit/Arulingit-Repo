@@ -1,0 +1,68 @@
+use role accountadmin;
+use database NUCOR_PRODREP;
+use schema Revenue_report_Manager;
+
+ALTER PIPE SNOWPIPELINE_2_AZURE_JSON SET PIPE_EXECUTION_PAUSED = FALSE;
+COPY INTO RawCustomerData_Json FROM @Azure_Snowflake_Json
+FILE_FORMAT = (TYPE = 'JSON')
+ON_ERROR = 'CONTINUE';
+ALTER PIPE SNOWPIPELINE_2_AZURE_JSON  REFRESH;
+truncate table RAWCUSTOMERDATA_JSON;
+
+
+COPY INTO RawRevenueData_csv 
+FROM @Aws_Snowflake_csv
+FILE_FORMAT = (TYPE = 'CSV') 
+ON_ERROR = 'CONTINUE';
+
+ALTER PIPE SNOWPIPELINE_2_AWS_S3   REFRESH;
+truncate table RawRevenueData_csv;
+
+
+
+CUSTOMER :
+--CREATE or replace STREAM raw_customer_stream ON TABLE RawCustomerData_json;
+
+select * from raw_customer_stream;
+
+select * from RAWCUSTOMERDATA_JSON ; --Loaded into RAW table in stage for Customer data
+
+ALTER TASK transform_customer_task resume; ---Run tranform tasks to load Customer data  Manually or waiting */2 mins 
+
+select * from TransformedCustomerInsights --- Verify the customer loaded into tranformed table
+
+select * from FactCustomerInsights ; -- Verify customer Fact table loaded 
+
+select * from DimCustomer ; -- verify the customer dimesion table
+
+
+
+Revenue:
+--CREATE  or replace STREAM raw_Revenue_stream ON TABLE RawRevenueData_csv;
+
+select * from raw_Revenue_stream;
+
+ALTER STREAM raw_customer_stream SET (RESTART = TRUE);
+
+select * from RawRevenueData_csv  ; --Loaded into RAW table in stage for Customer data
+
+ALTER TASK  transform_revenue_task  resume; ---Run tranform tasks to load Customer data  Manually or waiting */2 mins 
+
+select * from TransformedRevenue  --- Verify the customer loaded into tranformed table
+
+select * from FactRevenue  ; -- Verify customer Fact table loaded 
+
+select * from DimDate  ; -- verify the customer dimesion table
+
+
+
+
+truncate table NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDCUSTOMERINSIGHTS;
+truncate table NUCOR_PRODREP.REVENUE_REPORT_MANAGER.TRANSFORMEDREVENUE;
+truncate table RawRevenueData_csv;
+truncate table FactRevenue;
+truncate table DimDate;
+truncate table DimCustomer;
+truncate table RAWCUSTOMERDATA_JSON;
+truncate table FactCustomerInsights;
+
