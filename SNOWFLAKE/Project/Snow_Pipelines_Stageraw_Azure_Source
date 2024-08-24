@@ -16,7 +16,17 @@ storage_integration=azure_snf_data
 url='Azure://collectfilesfordata.blob.core.windows.net/json'
 file_format=JSON_Read_format;
 
+
 list @Azure_Snowflake_Json
+
+
+
+--Create the raw tables as per the files Raw_stage_table_scripts.
+
+
+
+
+
 copy into RawCustomerData_Json from @Azure_Snowflake_Json ON_ERROR=ABORT_STATEMENT;
 
  // COPY INTO RawCustomerData_Json
