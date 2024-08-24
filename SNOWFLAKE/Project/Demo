@@ -18,6 +18,8 @@ ON_ERROR = 'CONTINUE';
 ALTER PIPE SNOWPIPELINE_2_AWS_S3   REFRESH;
 truncate table RawRevenueData_csv;
 
+SELECT * FROM TABLE(information_schema.query_history())
+WHERE query_text ILIKE '%COPY INTO%';
 
 
 CUSTOMER :
@@ -42,13 +44,22 @@ Revenue:
 
 select * from raw_Revenue_stream;
 
-ALTER STREAM raw_customer_stream SET (RESTART = TRUE);
+--ALTER STREAM raw_customer_stream SET (RESTART = TRUE);
 
 select * from RawRevenueData_csv  ; --Loaded into RAW table in stage for Customer data
 
 ALTER TASK  transform_revenue_task  resume; ---Run tranform tasks to load Customer data  Manually or waiting */2 mins 
 
 select * from TransformedRevenue  --- Verify the customer loaded into tranformed table
+
+
+ALTER TASK  Load_DimDate resume;
+ALTER TASK  Load_FactRevenue resume;
+ALTER TASK  Load_DimCustomer resume;
+ALTER TASK  Load_FactCustomerInsights resume;
+
+
+
 
 select * from FactRevenue  ; -- Verify customer Fact table loaded 
 
