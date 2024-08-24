@@ -40,17 +40,20 @@ ON r.RevenueID = s.RevenueID
 GROUP BY r.RevenueDate;  -- Use the alias for RevenueDate in GROUP BY
 
 
+
 CREATE OR REPLACE TASK transform_customer_task
 WAREHOUSE = COMPUTE_WH
-SCHEDULE = '10 MINUTE'
+SCHEDULE = '2 MINUTE'
 AS
 INSERT INTO TransformedCustomerInsights
-SELECT
-    CustomerID,
-    SatisfactionScore,
-    Feedback,
-    TotalPurchases,
-    LastPurchaseDate
-FROM RAWCUSTOMERDATA_JSON
-JOIN raw_customer_stream ON RawCustomerData.CustomerID = raw_customer_stream.CustomerID
-WHERE raw_customer_stream.metadata$action = 'INSERT' OR raw_customer_stream.metadata$action = 'UPDATE';
+sELECT
+    raw_data.json_data:CustomerID::STRING AS CustomerID,
+    raw_data.json_data:SatisfactionScore::INT AS SatisfactionScore,
+    raw_data.json_data:Feedback::STRING AS Feedback,
+    raw_data.json_data:TotalPurchases::INT AS TotalPurchases,
+    raw_data.json_data:LastPurchaseDate::DATE AS LastPurchaseDate
+FROM RAWCUSTOMERDATA_JSON AS raw_data
+JOIN raw_customer_stream AS stream
+    ON raw_data.json_data:CustomerID::STRING = stream.json_data:CustomerID::STRING
+WHERE stream.METADATA$ACTION IN ('INSERT', 'UPDATE');
+
