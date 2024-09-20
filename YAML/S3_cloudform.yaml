@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Setup S3 Bucket, IAM Role, and Glue Crawler for Data Processing
+
+Resources:
+  S3DataBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties: 
+      BucketName: my-glue-data-bucket
+      VersioningConfiguration: 
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldFiles
+            Status: Enabled
+            ExpirationInDays: 365
+  
+  S3BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref S3DataBucket
+      PolicyDocument:
+        Statement:
+          - Action: 's3:*'
+            Effect: 'Allow'
+            Resource: !Sub 'arn:aws:s3:::${S3DataBucket}/*'
+            Principal:
+              Service: glue.amazonaws.com
+
+  GlueServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: GlueServiceRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: GlueS3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                  - 's3:ListBucket'
+                Resource: !Sub 'arn:aws:s3:::${S3DataBucket}/*'
+
+  GlueCrawler:
+    Type: 'AWS::Glue::Crawler'
+    Properties:
+      Name: MyDataCrawler
+      Role: !GetAtt GlueServiceRole.Arn
+      DatabaseName: my_glue_catalog_db
+      Targets:
+        S3Targets:
+          - Path: !Sub 's3://${S3DataBucket}/'
+      Schedule:
+        ScheduleExpression: 'cron(0 12 * * ? *)'
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+
+Outputs:
+  S3BucketName:
+    Description: 'The S3 bucket for Glue data'
+    Value: !Ref S3DataBucket
